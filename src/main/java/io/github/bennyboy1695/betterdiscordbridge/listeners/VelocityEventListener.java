@@ -17,6 +17,7 @@ public class VelocityEventListener {
 
     @Subscribe
     public void onChat(PlayerChatEvent event) {
+        bridge.getLogger().info("ChatEventFired");
         String serverName;
         if (!bridge.getConfig().getUseConfigServerNames()) {
             serverName = bridge.getConfig().getServerNames(event.getPlayer().getCurrentServer().get().getServerInfo().getName());
@@ -28,7 +29,6 @@ public class VelocityEventListener {
                 .replaceAll("<Server>", Matcher.quoteReplacement(serverName))
                 .replaceAll("<User>", event.getPlayer().getUsername())
                 .replaceAll("<Message>", event.getMessage());
-
         if (!bridge.getConfig().getChatMode().equals("separated")) {
             DiscordMethods.sendMessage(bridge.getJDA(), bridge.getConfig().getChannels("global"), message);
         } else {

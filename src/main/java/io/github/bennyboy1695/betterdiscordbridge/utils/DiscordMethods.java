@@ -16,16 +16,18 @@ public class DiscordMethods {
     }
 
     public static void sendMessage(JDA jda , long channelID, Object message) {
-        TextChannel textChannel = jda.getTextChannelById(channelID);
-        if (textChannel == null) {
-            return;
-        }
-
-        if (message instanceof MessageEmbed) {
-            textChannel.sendMessage((MessageEmbed) message).queue();
-        } else if (message instanceof String){
-            textChannel.sendMessage((String) message).queue();
-        }
+        Thread newThread = new Thread(() -> {
+            TextChannel textChannel = jda.getTextChannelById(channelID);
+            if (textChannel == null) {
+                return;
+            }
+            if (message instanceof MessageEmbed) {
+                textChannel.sendMessage(message.toString()).queue();
+            } else if (message instanceof String){
+                textChannel.sendMessage((String) message).queue();
+            }
+        });
+        newThread.start();
     }
 
     public void doShutdown() {
@@ -42,7 +44,7 @@ public class DiscordMethods {
             return;
         }
         if (message instanceof MessageEmbed) {
-            textChannel.sendMessage((MessageEmbed) message).queue(sentMsg -> sentMsg.delete().queueAfter(seconds, TimeUnit.SECONDS));
+            textChannel.sendMessage( message.toString()).queue(sentMsg -> sentMsg.delete().queueAfter(seconds, TimeUnit.SECONDS));
         } else {
             textChannel.sendMessage((String) message).queue(sentMsg -> sentMsg.delete().queueAfter(seconds, TimeUnit.SECONDS));
         }

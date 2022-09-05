@@ -6,20 +6,15 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import io.github.bennyboy1695.betterdiscordbridge.BetterDiscordBridge;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.StyleBuilderApplicable;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Consumer;
 
 //h//
 public class DiscordListener extends ListenerAdapter {
@@ -41,7 +36,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     @Override
-    public void onGuildMessageReceived(@NotNull GuildMessageReceivedEvent event) {
+    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         User author = event.getAuthor();
         Message message = event.getMessage();
         MessageChannel channel = event.getChannel();
@@ -66,13 +61,14 @@ public class DiscordListener extends ListenerAdapter {
         } else {
             for (RegisteredServer server : bridge.getProxyServer().getAllServers()) {
                 if (channel.getIdLong() == bridge.getConfig().getChannels(server.getServerInfo().getName())) {
+                    if(componentMsg.toString().isEmpty())return;
                     for (Player player : server.getPlayersConnected()) {
                         player.sendMessage(Identity.nil(), componentMsg);
                     }
                 }
             }
         }
-        logger.info(componentMsg.toString());
+       // logger.info(componentMsg.toString());
     }
 }
 

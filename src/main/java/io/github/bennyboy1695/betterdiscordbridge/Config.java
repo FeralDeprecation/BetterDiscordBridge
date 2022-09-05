@@ -2,17 +2,17 @@ package io.github.bennyboy1695.betterdiscordbridge;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import org.slf4j.Logger;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
-import org.slf4j.Logger;
+
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class Config {
-
     private File defaultCfg;
     private final Logger logger;
     private Path path;
@@ -33,8 +33,8 @@ public class Config {
         }
 
         defaultConf = new File(defaultConfig.toFile(), configName);
-
         configManager = HoconConfigurationLoader.builder().setFile(defaultConf).build();
+        //configManager = HoconConfigurationLoader.builder().setFile(defaultConf).build();
 
         try {
             configNode = configManager.load();
@@ -104,6 +104,7 @@ public class Config {
             if (configNode.getNode("discord", "channels", serverName, "serverName").isVirtual()) {
                 configNode.getNode("discord", "channels", serverName, "serverName").setValue(cap).setComment("This is the name you want to replace <Server> in discord if useConfigServerNames is set to true!");
             }
+
         }
 
         //Formats//

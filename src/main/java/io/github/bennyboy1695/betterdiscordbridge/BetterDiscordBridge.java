@@ -10,6 +10,7 @@ import io.github.bennyboy1695.betterdiscordbridge.commands.CommandGameStatus;
 import io.github.bennyboy1695.betterdiscordbridge.listeners.DiscordListener;
 import io.github.bennyboy1695.betterdiscordbridge.listeners.VelocityEventListener;
 import io.github.bennyboy1695.betterdiscordbridge.utils.DiscordMethods;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import org.slf4j.Logger;
 
 import javax.security.auth.login.LoginException;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.util.EnumSet;
 
@@ -60,34 +62,40 @@ public final class BetterDiscordBridge {
     @Subscribe
     public void onProxyInit(ProxyInitializeEvent event) {
         logger.info("Enabling BetterDiscordBridge, version " + VERSION + "!");
-
+        final int cores = Runtime.getRuntime().availableProcessors();
+        if (cores <= 1) {
+            logger.info("Your machine is running on less than 2 cores, applying quickfix");
+            System.out.println("Available Cores \"" + cores + "\", setting Parallelism Flag");
+            System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "1");
+        }
         this.config = new Config(configDirectory, "betterdiscordbridge.conf", logger, server);
-
         try {
+            logger.info("Loading discord...");
             loadDiscord();
+            logger.info("Discord loaded!");
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error("Error while loading discord inside BetterDiscordBridge");
         }
-
         // This will get the Game Status that was set in the config.json file
         if (getConfig().getUseStatus()) {
             updateGameStatus(getConfig().getGameStatus());
         }
-
         server.getEventManager().register(this, new VelocityEventListener(this));
-
         // This Registration method is deprecated and will need to be updated eventually.
-        server.getCommandManager().register(new CommandGameStatus(this), "gamestatus", "gs");
+        server.getCommandManager().register("gamestatus",new CommandGameStatus(this) , "gs");
     }
 
 
     // loadDiscord will load the bot token, channel info, guild info, and run DiscordListener
     private void loadDiscord() {
+        logger.info("JVM version: "+ManagementFactory.getRuntimeMXBean().getVmVersion());
         try {
+            logger.info("Loading Discord Bot...");
             setupDiscord(getConfig().getDiscordToken(), getConfig().getGuildID(), new DiscordListener(this));
-
+            logger.info("Discord bot loaded!");
             // This will send a message to the console as to indicate that the loadDiscord event is loading
-            logger.info("Loading Discord Bot!");
+
 
             /*
              If loadDiscord does fail, we catch the error, log it in console with an understanding message.
@@ -97,6 +105,7 @@ public final class BetterDiscordBridge {
              The StackTrace is caught and printed in the ProxyInit on Line 70/71.
             */
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("ERROR DURING 'loadDiscord' EVENT!");
         }
     }
@@ -133,21 +142,42 @@ public final class BetterDiscordBridge {
         try
         {
             // Grab token as string, enable all intents.
-            jda = JDABuilder.create(token, EnumSet.allOf(GatewayIntent.class))
+
+            JDABuilder builder  =JDABuilder.create(token, EnumSet.allOf(GatewayIntent.class));
+            logger.info("Setting auto reconnect");
+            try { builder.setAutoReconnect(true);}catch (Exception e){e.printStackTrace();}
+
+            logger.info("Adding listeners");
+            try { builder.addEventListeners(eventListeners);}catch (Exception e){e.printStackTrace();}
+
+            logger.info("Setting member policy");
+            try { builder.setMemberCachePolicy(MemberCachePolicy.DEFAULT);}catch (Exception e){e.printStackTrace();}
+
+            logger.info("Setting chunking filter");
+            try { builder.setChunkingFilter(ChunkingFilter.ALL);}catch (Exception e){e.printStackTrace();}
+
+            logger.info("Building  jda");
+
+            try {  jda = builder.build();}catch (LoginException e){
+                logger.error("ERROR STARTING THE PLUGIN:");
+                logger.error("You probably didn't set the token yet, edit your config!");
+                e.printStackTrace();}
+            logger.info("Setting jda to awaitReady()");
+            try {    jda.awaitReady();}catch (Exception e){e.printStackTrace();}
+
+
+     /*       jda = JDABuilder.create(token, EnumSet.allOf(GatewayIntent.class))
                     .setAutoReconnect(true)
                     .addEventListeners(eventListeners)
                     .setMemberCachePolicy(MemberCachePolicy.DEFAULT)
                     .setChunkingFilter(ChunkingFilter.ALL)
-                    .build().awaitReady();
+                    .build().awaitReady();*/
             // Log that this was successful
             logger.info("JDA Initialized Successfully");
 
-        } catch (LoginException e) {
-            logger.error("ERROR STARTING THE PLUGIN:");
-            logger.error("You probably didn't set the token yet, edit your config!");
-            e.printStackTrace();
 
         } catch (Exception e) {
+
             logger.error("Error connecting to discord. This is NOT a plugin error");
             e.printStackTrace();
         }
